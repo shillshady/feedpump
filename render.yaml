@@ -1,0 +1,19 @@
+services:
+  - type: worker
+    name: feedpump-worker
+    runtime: docker
+    dockerfilePath: ./worker/Dockerfile
+    dockerContext: .
+    region: oregon
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: HELIUS_API_KEY
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: WEBHOOK_AUTH_SECRET
+        sync: false
+      - key: WEBHOOK_URL
+        sync: false

@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TokenStatus {
+  BONDING_CURVE
+  PUMPSWAP
+}
+
+enum ClaimStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum BuybackStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model CreatorWallet {
+  id                  String   @id @default(cuid())
+  publicKey           String   @unique @map("public_key")
+  encryptedPrivateKey String   @map("encrypted_private_key")
+  iv                  String
+  authTag             String   @map("auth_tag")
+  createdAt           DateTime @default(now()) @map("created_at")
+  tokens              Token[]
+
+  @@map("creator_wallets")
+}
+
+model Token {
+  id                       String      @id @default(cuid())
+  mintAddress              String      @unique @map("mint_address")
+  name                     String
+  symbol                   String
+  imageUrl                 String?     @map("image_url")
+  creatorWalletId          String      @map("creator_wallet_id")
+  creatorWallet            CreatorWallet @relation(fields: [creatorWalletId], references: [id])
+  vaultPda                 String      @map("vault_pda")
+  swapVaultPda             String?     @map("swap_vault_pda")
+  status                   TokenStatus @default(BONDING_CURVE)
+  totalFeesCollectedLamports BigInt    @default(0) @map("total_fees_collected_lamports")
+  totalBuybackLamports     BigInt      @default(0) @map("total_buyback_lamports")
+  webhookId                String?     @map("webhook_id")
+  createdAt                DateTime    @default(now()) @map("created_at")
+  updatedAt                DateTime    @updatedAt @map("updated_at")
+  feeClaims                FeeClaim[]
+  buybacks                 Buyback[]
+  webhookEvents            WebhookEvent[]
+
+  @@map("tokens")
+}
+
+model FeeClaim {
+  id              String      @id @default(cuid())
+  tokenId         String      @map("token_id")
+  token           Token       @relation(fields: [tokenId], references: [id])
+  amountLamports  BigInt      @map("amount_lamports")
+  txSignature     String      @unique @map("tx_signature")
+  status          ClaimStatus @default(PENDING)
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  @@map("fee_claims")
+}
+
+model Buyback {
+  id              String        @id @default(cuid())
+  tokenId         String        @map("token_id")
+  token           Token         @relation(fields: [tokenId], references: [id])
+  amountLamports  BigInt        @map("amount_lamports")
+  tokensReceived  BigInt?       @map("tokens_received")
+  txSignature     String        @unique @map("tx_signature")
+  status          BuybackStatus @default(PENDING)
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@map("buybacks")
+}
+
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  tokenId    String?  @map("token_id")
+  token      Token?   @relation(fields: [tokenId], references: [id])
+  payload    Json
+  processed  Boolean  @default(false)
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  @@index([processed, receivedAt])
+  @@map("webhook_events")
+}
+
+model ProcessingLock {
+  id        String   @id // vault PDA as ID
+  lockedAt  DateTime @default(now()) @map("locked_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@map("processing_locks")
+}
