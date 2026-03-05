@@ -3,7 +3,7 @@ import { prisma } from "./db.js";
 import { collectFees } from "./fee-collector.js";
 import { buyback } from "./auto-buyer.js";
 
-const MIN_COLLECT_LAMPORTS = 5_000_000; // 0.005 SOL
+const MIN_COLLECT_LAMPORTS = 1_000_000; // 0.001 SOL
 const LOCK_TTL_MS = 15_000; // 15s lock expiry
 
 async function acquireLock(lockId: string): Promise<boolean> {
@@ -53,9 +53,9 @@ export async function collectAndBuy(
   }
 
   try {
-    // Check creator vault balance before collecting
-    const creatorPubkey = new PublicKey(token.creatorWallet.publicKey);
-    const vaultBalance = await connection.getBalance(creatorPubkey);
+    // Check creator vault PDA balance before collecting
+    const vaultPubkey = new PublicKey(token.vaultPda);
+    const vaultBalance = await connection.getBalance(vaultPubkey);
 
     if (vaultBalance < MIN_COLLECT_LAMPORTS) {
       return;
