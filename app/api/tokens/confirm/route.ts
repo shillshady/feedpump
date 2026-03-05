@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { VersionedTransaction } from "@solana/web3.js";
 import { prisma } from "@/lib/db/client";
 import { deriveBondingCurveVault, deriveCreatorVault } from "@/lib/solana/vault";
 import { createWebhook } from "@/lib/helius/webhooks";
@@ -56,17 +56,17 @@ export async function POST(request: NextRequest) {
     );
     console.log(`[confirm] Create confirmed: ${createSig}`);
 
-    // Build unsigned buy TX now that token exists on-chain
+    // Build buy TX via PumpPortal (token exists on-chain now)
     let unsignedBuyTx: string | null = null;
     if (body.initialBuyAmount > 0 && body.userPublicKey) {
-      console.log(`[confirm] Building buy TX for user wallet...`);
-      const { buildBuyTransaction } = await import("@/lib/pumpfun/buy");
+      console.log(`[confirm] Building buy TX via PumpPortal...`);
+      const { buildBuyTransaction } = await import("@/lib/pumpportal/client");
       const buyTxBytes = await buildBuyTransaction({
-        buyerPublicKey: new PublicKey(body.userPublicKey),
-        mintPublicKey: new PublicKey(mintAddress),
-        creatorPublicKey: new PublicKey(creatorWallet.publicKey),
+        publicKey: body.userPublicKey,
+        mintAddress,
         amountSol: body.initialBuyAmount,
-        slippageBps: 1500,
+        slippage: 15,
+        priorityFee: 0.0005,
       });
       unsignedBuyTx = Buffer.from(buyTxBytes).toString("base64");
       console.log(`[confirm] Buy TX built for user signing`);
@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
         mintAddress,
         name: name || "Unknown",
         symbol: symbol || "???",
+        imageUrl: body.imageUrl || null,
         vaultPda,
         webhookId,
         creatorWallet: {

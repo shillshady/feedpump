@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { uploadMetadata } from "@/lib/pumpportal/metadata";
 import { buildCreateTransaction } from "@/lib/pumpfun/create";
-import { buildBuyTransaction } from "@/lib/pumpfun/buy";
 import { buildFundingTransaction, calculateCreateFundingSol } from "@/lib/solana/transfer";
 import { encrypt } from "@/lib/crypto/encryption";
 import { launchTokenSchema } from "@/lib/validation/token";
@@ -93,21 +92,6 @@ export async function POST(request: NextRequest) {
     );
     const unsignedFundingTx = Buffer.from(fundingTx.serialize()).toString("base64");
 
-    // Build buy TX: USER's wallet buys directly (unsigned — user signs client-side)
-    let unsignedBuyTx: string | null = null;
-    if (input.initialBuyAmount > 0) {
-      console.log("[prepare] Building buy TX for user wallet,", input.initialBuyAmount, "SOL...");
-      const buyTxBytes = await buildBuyTransaction({
-        buyerPublicKey: new PublicKey(userPublicKey),
-        mintPublicKey: mintKeypair.publicKey,
-        creatorPublicKey: creatorKeypair.publicKey,
-        amountSol: input.initialBuyAmount,
-        slippageBps: 1500,
-      });
-      unsignedBuyTx = Buffer.from(buyTxBytes).toString("base64");
-      console.log("[prepare] Buy TX built (unsigned)");
-    }
-
     // Encrypt creator keypair for the confirm step
     const encrypted = encrypt(bs58.encode(creatorKeypair.secretKey));
 
@@ -116,8 +100,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       fundingTransaction: unsignedFundingTx,
       createTransaction: signedCreateTx,
-      buyTransaction: unsignedBuyTx,
       mintAddress: mintKeypair.publicKey.toBase58(),
+      imageUrl: metadata.imageUrl,
       creatorPublicKey: creatorKeypair.publicKey.toBase58(),
       requiredSol,
       creatorWallet: {

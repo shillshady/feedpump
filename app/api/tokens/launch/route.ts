@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
         mintAddress,
         name: input.name,
         symbol: input.symbol,
+        imageUrl: metadata.imageUrl || null,
         vaultPda,
         webhookId: webhook.webhookID,
         creatorWallet: {

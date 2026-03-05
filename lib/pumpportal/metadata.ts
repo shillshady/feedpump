@@ -12,6 +12,7 @@ interface TokenMetadataInput {
 
 interface MetadataResult {
   metadataUri: string;
+  imageUrl: string | null;
 }
 
 export async function uploadMetadata(
@@ -50,5 +51,17 @@ export async function uploadMetadata(
     throw new Error(`Metadata upload returned no URI: ${JSON.stringify(result)}`);
   }
 
-  return result;
+  // Fetch the metadata JSON from IPFS to extract the image URL
+  let imageUrl: string | null = null;
+  try {
+    const metaRes = await fetch(result.metadataUri);
+    if (metaRes.ok) {
+      const metaJson = await metaRes.json();
+      imageUrl = metaJson.image || null;
+    }
+  } catch {
+    console.warn("[metadata] Failed to fetch image URL from IPFS metadata");
+  }
+
+  return { metadataUri: result.metadataUri, imageUrl };
 }

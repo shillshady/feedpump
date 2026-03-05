@@ -109,6 +109,7 @@ export default function LaunchPage() {
           name: form.name,
           symbol: form.symbol.toUpperCase(),
           creatorWallet: prepData.creatorWallet,
+          imageUrl: prepData.imageUrl,
           initialBuyAmount: form.initialBuyAmount,
           userPublicKey: publicKey.toBase58(),
         }),
