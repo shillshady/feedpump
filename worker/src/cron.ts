@@ -2,10 +2,10 @@ import { Connection } from "@solana/web3.js";
 import { prisma } from "./db.js";
 import { collectAndBuy } from "./collect-and-buy.js";
 
-const CRON_INTERVAL_MS = 60_000; // 60s fallback
+const CRON_INTERVAL_MS = 15_000; // 15s
 
 export function startCron(connection: Connection): void {
-  console.log("[cron] Started — checking vaults every 60s");
+  console.log("[cron] Started — checking vaults every 15s");
 
   async function checkAllVaults() {
     try {

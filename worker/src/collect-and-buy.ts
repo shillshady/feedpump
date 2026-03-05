@@ -4,7 +4,7 @@ import { collectFees } from "./fee-collector.js";
 import { buyback } from "./auto-buyer.js";
 
 const MIN_COLLECT_LAMPORTS = 5_000_000; // 0.005 SOL
-const LOCK_TTL_MS = 60_000; // 60s lock expiry
+const LOCK_TTL_MS = 15_000; // 15s lock expiry
 
 async function acquireLock(lockId: string): Promise<boolean> {
   const now = new Date();
